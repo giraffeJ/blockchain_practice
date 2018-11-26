@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>1인용 복권 시뮬레이터 아니고 가위바위보 ㅎㅎ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="text/javascript" src="./lib/bignumber.min.js"></script>
+<script type="text/javascript" src="./lib/web3-light.js"></script>
+    <script type="text/javascript">
+      var Web3 = require("web3");
+      var web3 = new Web3();
+      web3.setProvider(
+        new web3.providers.HttpProvider("http://192.168.56.1:8123")
+      );
+      var contract = web3.eth.contract([ { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "games", "outputs": [ { "name": "player", "type": "address", "value": "0x" }, { "name": "win", "type": "uint256", "value": "0" }, { "name": "rspinput", "type": "uint256", "value": "0" }, { "name": "betting_amount", "type": "uint256", "value": "0" }, { "name": "rspresult", "type": "uint256", "value": "0" }, { "name": "reward", "type": "uint256", "value": "0" }, { "name": "blockNumber", "type": "uint256", "value": "0" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [], "name": "killcontract", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "address" } ], "name": "balances", "outputs": [ { "name": "", "type": "uint256", "value": "0" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [ { "name": "rsp_input", "type": "uint256" } ], "name": "play", "outputs": [], "payable": true, "stateMutability": "payable", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "player", "type": "address" }, { "indexed": false, "name": "win", "type": "uint256" }, { "indexed": false, "name": "amount", "type": "uint256" }, { "indexed": false, "name": "rspresult", "type": "uint256" } ], "name": "sendResult", "type": "event" } ]).at("0xeEaB734Cf1aA2EFF04DFf8b5005947CD9d21A6A2");
+      var event = contract.sendResult();
+      event.watch(function(err, result) {
+        if (err) {
+          alert("잔액이 부족합니다");
+          return;
+        }
+        console.log(result);
+        console.log(result.rspresult);
+        var amount = web3.fromWei(result.args.amount.toNumber(), "ether");
+        if(result.args.rspresult.toNumber()==0) document.getElementById("computer").innerHTML="바위"
+        if(result.args.rspresult.toNumber()==1) document.getElementById("computer").innerHTML="가위"
+        if(result.args.rspresult.toNumber()==2) document.getElementById("computer").innerHTML="보"
+        
+        if (result.args.win.toNumber() === 2) {
+          message("축하드립니다! " + amount + "ETHER를 얻었습니다.");
+        } else if (result.args.win.toNumber() === 1) {
+          message("비겼습니다! " + amount + "ETHER를 돌려받았습니다.");
+        } else {message("다음기회를 이용해주세요.")
+        console.log(result.args.win)};
+        refreshBalance();
+      });
+      function message($mes) {
+        document.getElementById("messages").innerHTML = $mes;
+      }
+	function refreshBalance(){
+		var address= document.getElementById('address').value;
+        document.getElementById('balance').innerText = web3.fromWei(web3.eth.getBalance(address).toNumber(),"ether") + "ETHER";
+	}
+      function rsp(e) {
+        var my_choice_ch = e.value;
+        document.getElementById("user").innerText = my_choice_ch;
+        var address = document.getElementById('address').value;
+		var amount = web3.toWei(document.getElementById('bet_amount').value,"ether");
+
+		web3.eth.defaultAccount = address;
+        if(my_choice_ch=='바위') my_choice=0;
+        else if(my_choice_ch=='가위') my_choice=1;
+        else if(my_choice_ch=='보') my_choice=2;
+
+        if(web3.personal.unlockAccount(address,document.getElementById('pass').value)){
+				contract.play(my_choice,{value:amount, gas:2000000},function(err,result){
+			        if(!err){
+				        message('결과를 기다리는 중입니다.');
+				    }
+			        else
+				        message(err);
+		        });
+        }
+		message('wait... ');
+      }
+    </script>
+    <style>
+      body {
+        text-align: center;
+      }
+
+      input,
+      select {
+        padding: 6px 10px;
+        margin: 4px 0;
+        display: inline-block;
+        border: 1px solid #3cbc8d;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      input[type="button"] {
+        border: none;
+        border-radius: 4px;
+        border: 1px solid #3cbc8d;
+        cursor: pointer;
+      }
+      input[type="button"]:hover {
+        background-color: #45a049;
+      }
+      p,
+      a {
+        color: #3cbc8d;
+        font-weight: 12px;
+      }
+      .title {
+        font-size: 50px;
+        text-align: center;
+      }
+      #machine {
+        text-align: center;
+      }
+
+      .flex {
+        width: 10%;
+        margin: auto;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <h1>가위바위보를 해봐요^_^</h1>
+      <p class="login">
+        ID:
+        <input
+          type="text"
+          id="address"
+          value="0x91a1922851Bc33C8224153Fac8Df53160b230472"
+        />
+        Pass: <input type="password" id="pass" value="1234" />
+        <input type="button" value="잔고확인" onClick="refreshBalance()" />
+      </p>
+      <div class="flex">
+        <p>내 잔고:</p>
+        <p id="balance">0 ETH</p>
+      </div>
+      <p>컴퓨터의 선택</p>
+      <text x="150" y="415" font-family="courier" font-size="500" fill="#3CBC8D" id="computer">
+        바위
+      </text>
+      <p>당신의 선택</p>
+      <text x="350" y="415" font-family="courier" font-size="500" fill="#3CBC8D" id="user" value="rsp_choice">
+        바위
+      </text>
+      <div>
+          <p>배팅금액</p>
+        <input type="number" id="bet_amount" />
+          
+    </div>
+      <div>
+        <h2>고르세요</h2>
+        <input type="button" id="rsp_choice" name="1" value="가위" onclick="rsp(this)" />
+        <input type="button" id="rsp_choice" name="0" value="바위" onclick="rsp(this)" />
+        <input type="button" id="rsp_choice" name="2" value="보" onclick="rsp(this)" />
+      </div>
+      <h1 id="result"></h1>
+      <h2 id="messages"></h2>
+    </div>
+  </body>   
+</html>
+
+<!-- 묵찌빠012 -->
+

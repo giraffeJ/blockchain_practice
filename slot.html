@@ -1,0 +1,131 @@
+<!Doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<script type="text/javascript" src="./lib/bignumber.min.js"></script>
+<script type="text/javascript" src="./lib/web3-light.js"></script>
+<script type="text/javascript">
+   
+    var Web3 = require('web3');
+    var web3 = new Web3();
+    web3.setProvider(new web3.providers.HttpProvider("http://192.168.56.1:8123"));
+	var contract = web3.eth.contract([ { "constant": false, "inputs": [], "name": "bet", "outputs": [], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [ { "name": "", "type": "uint256" } ], "name": "games", "outputs": [ { "name": "player", "type": "address", "value": "0x" }, { "name": "win", "type": "bool", "value": false }, { "name": "betting_amount", "type": "uint256", "value": "0" }, { "name": "game_result", "type": "uint256", "value": "0" }, { "name": "reward", "type": "uint256", "value": "0" }, { "name": "blockNumber", "type": "uint256", "value": "0" } ], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [], "name": "killcontract", "outputs": [], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": false, "name": "player", "type": "address" }, { "indexed": false, "name": "win", "type": "bool" }, { "indexed": false, "name": "amount", "type": "uint256" }, { "indexed": false, "name": "n1", "type": "uint256" }, { "indexed": false, "name": "n2", "type": "uint256" }, { "indexed": false, "name": "n3", "type": "uint256" } ], "name": "sendResendResult", "type": "event" } ]).at("0x0c32C638f6567675A458eEe4Fff5d6a605e2B710");	
+	var event=contract.sendResult();
+	event.watch(function(err, result) {
+	if(err){
+	console.log(err)
+	return;
+	}
+	var amount=web3.fromWei(result.args.amount.toNumber(),"ether");
+	document.getElementById('first').innerHTML = result.args.n1.toNumber();
+	document.getElementById('second').innerHTML = result.args.n2.toNumber();
+	document.getElementById('third').innerHTML = result.args.n3.toNumber();
+	if(result.args.win){
+		message('축하드립니다! ' + amount + 'ETHER를 얻었습니다.');
+	}
+	else	{message('다음기회를 이용해주세요.')
+	console.log(result.args.win)};
+	refreshBalance();});
+    function message( $mes ) {
+            document.getElementById('messages').innerHTML = $mes;
+        }
+	function refreshBalance(){
+		var address= document.getElementById('address').value;
+        document.getElementById('balance').innerText = web3.fromWei(web3.eth.getBalance(address).toNumber(),"ether") + "ETHER";
+	}
+	function spin()
+        {
+			var address = document.getElementById('address').value;
+			var amount = web3.toWei(document.getElementById('bet_amount').value,"ether");
+
+			web3.eth.defaultAccount = address;
+			if(web3.personal.unlockAccount(address,document.getElementById('pass').value)){
+				contract.bet({value:amount, gas:2000000},function(err,result){
+			if(!err){
+				message('결과를 기다리는 중입니다.');
+				}
+			else
+				message(err);
+		});}
+			message('wait... ');
+        }
+</script>
+<style>
+        body {
+            text-align: center;
+        }
+
+        input, select {
+			padding: 6px 10px;
+			margin: 4px 0;
+			display: inline-block;
+			border: 1px solid #3CBC8D;
+			border-radius: 4px;
+			box-sizing: border-box;
+		}
+		input[type=button] {
+			border: none;
+			border-radius: 4px;
+			border: 1px solid #3CBC8D;
+			cursor: pointer;
+		}
+		input[type=button]:hover {
+			background-color: #45a049;
+		}
+        p, a {color: #3CBC8D; font-weight: 12px; }
+        .title {font-size: 50px;text-align: center;}
+        #machine {text-align: center;}
+    </style>
+</head>
+<body>
+
+<p class="title">
+    ETH Slots
+</p>
+
+<p class="login">
+    ID:
+	<input type="text" id="address" value="0x91a1922851Bc33C8224153Fac8Df53160b230472">
+	Pass:
+	<input type="password" id="pass" value="1234">
+    <input type="button" value="잔고확인" onClick="refreshBalance()">
+</p>
+
+<div id="machine">
+    <svg width="650" height="250" viewBox="0 0 1700 500">
+
+    <circle cx="300" cy="260" r="240" fill="white" stroke="#777" stroke-width="30"/>
+	<circle cx="850" cy="260" r="240" fill="white" stroke="#777" stroke-width="30"/>
+	<circle cx="1400" cy="260" r="240" fill="white" stroke="#777" stroke-width="30"/>
+    <text x="150" y="415" font-family="courier" font-size="500" fill="#3CBC8D" id="first">
+    7
+    </text>
+
+    <text x="700" y="415" font-family="courier" font-size="500" fill="#3CBC8D" id ="second">
+    7
+    </text>
+
+    <text x="1260" y="415" font-family="courier" font-size="500" fill="#3CBC8D" id="third">
+    7
+    </text>
+    </svg>
+</div>
+
+
+<p>
+	<select id="bet_amount">
+		<option> 0.2 </option>
+		<option> 0.4 </option>
+		<option> 0.6 </option>
+		<option> 0.8 </option>
+		<option> 1.0 </option>
+	</select>
+    <input type="button" value="Spin" onClick="spin()">
+</p>
+
+
+<p id="balance">0 ETHER</p>
+
+<p id="messages"></p>
+</body>
+</html>
